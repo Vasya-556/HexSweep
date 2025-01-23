@@ -29,6 +29,7 @@ def draw_hexgon(Surface, color, size, position, is_flat_top):
         True,
         points
     )
+    return points
 
 def draw_hexagon_grid(Surface, color, size, n, start_pos, is_flat_top=True):
     height = sqrt(3) * size
@@ -42,28 +43,51 @@ def draw_hexagon_grid(Surface, color, size, n, start_pos, is_flat_top=True):
         horiz = horiz/2
         vert = 3/2 * size
 
+    hexagons = []
     pos_x = start_pos[0]
     pos_y = start_pos[1]
 
     for i in range(n):
         for j in range(n):
-            draw_hexgon(Surface, color, size, (pos_x, pos_y), is_flat_top)
+            points = draw_hexgon(Surface, color, size, (pos_x, pos_y), is_flat_top)
+            hexagons.append(((pos_x, pos_y), points))
             pos_x += horiz * 2
             pos_x -= horiz * 2
             pos_x += horiz
             pos_y += vert
-            draw_hexgon(Surface, color, size, (pos_x, pos_y), is_flat_top)
+            points = draw_hexgon(Surface, color, size, (pos_x, pos_y), is_flat_top)
+            hexagons.append(((pos_x, pos_y), points))
             pos_x += horiz
             pos_y -= vert
         pos_y += vert * 2
         pos_x = start_pos[0]
+    
+    return hexagons
+
+def point_in_hexagon(point, hexagon):
+    x, y = point
+    inside = False
+    n = len(hexagon)
+    print(n)
+    p1x, p1y = hexagon[0]
+    for i in range(n + 1):
+        p2x, p2y = hexagon[i % n]
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+        p1x, p1y = p2x, p2y
+    return inside
 
 while running:
 
     screen.fill("white")
 
     # draw_hexagon(screen, "green", 50, (100,100), 60)
-    draw_hexagon_grid(screen, "blue", 50, 3, (100,100),False)
+    hexagons = draw_hexagon_grid(screen, "blue", 50, 2, (50,50),True)
 
     pygame.display.update()
 
@@ -71,3 +95,11 @@ while running:
         if event.type == pygame.QUIT:
             running = False
             pygame.quit()
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  
+                mouse_pos = pygame.mouse.get_pos()
+
+                for hex_pos, hex_points in hexagons:
+                    if point_in_hexagon(mouse_pos, hex_points):
+                        print("hex")
+                        break
