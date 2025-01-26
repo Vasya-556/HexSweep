@@ -8,11 +8,19 @@ pygame.display.set_caption("HexSweep.py")
 
 running = True
 is_first_hexagon_clicked = False
+row = 5
+col = 6
+checked_hex = [[0 for _ in range(col)] for _ in range(row)]
 
 def draw_hexgon(Surface, color, size, position, is_flat_top):
     PI = 3.14
     points = []
 
+    number = 0
+    font = pygame.font.Font("Jersey15-Regular.ttf", 45)
+    text_surface = font.render(str(number), True, "black")
+    text_rect = text_surface.get_rect(center=position)
+    
     i = 0
     for j in range(6):
         if is_flat_top:
@@ -25,12 +33,25 @@ def draw_hexgon(Surface, color, size, position, is_flat_top):
         points.append((x,y))
         i += 1
     
-    pygame.draw.lines(
+    # pygame.draw.lines(
+    #     Surface,
+    #     color,
+    #     True,
+    #     points
+    # )
+    pygame.draw.polygon(
         Surface,
         color,
-        True,
-        points
+        points,
     )
+    pygame.draw.polygon(
+        Surface,
+        'black',
+        points,
+        width=4
+    )
+    screen.blit(text_surface, text_rect)
+
     return points
 
 def draw_hexagon_grid(Surface, color, size, rows, columns, start_pos, is_flat_top=True):
@@ -58,7 +79,6 @@ def draw_hexagon_grid(Surface, color, size, rows, columns, start_pos, is_flat_to
         pos_x = start_pos[0]
         if row % 2 == 0:
             pos_x += horiz
-        
 
     return hexagons
 
@@ -98,14 +118,40 @@ def generate_mines(row, col, first_coord):
         if mines_remaining <= 0:
             break
     
-    print(matrix)
+    return matrix
+
+def check_hex(x, y, mines, row, col, checked_hex):
+    if mines[x][y] == 1:
+        end_game()
+    else:
+        total = 0
+        output = check_neighbors(x, y, mines, row, col, checked_hex, total)
+        print(output)
+        return
+
+def check_neighbors(x, y, mines, row, col, checked_hex, total):
+    if x >= row or y >= col or x < 0 or y < 0:
+        return 0
+    if checked_hex[x][y] == 1:
+        return 0
+    checked_hex[x][y] = 1
+    total += check_neighbors(x, y-1, mines, row, col, checked_hex, total)
+    total += check_neighbors(x+1, y-1, mines, row, col, checked_hex, total)
+    total += check_neighbors(x-1, y, mines, row, col, checked_hex, total)
+    total += check_neighbors(x+1, y, mines, row, col, checked_hex, total)
+    total += check_neighbors(x-1, y+1, mines, row, col, checked_hex, total)
+    total += check_neighbors(x, y+1, mines, row, col, checked_hex, total)
+    if mines[x][y] == 1:
+        return total + 1
+    return total
+
+def end_game():
+    print("you lose! :(")
 
 while running:
 
     screen.fill("white")
 
-    row = 5
-    col = 6
     hexagons = draw_hexagon_grid(screen, "blue", 50, row, col, (50,50),False)
     
     pygame.display.update()
@@ -120,9 +166,9 @@ while running:
 
                 for coords, hex_pos, hex_points in hexagons:
                     if point_in_hexagon(mouse_pos, hex_points):
-                        print("hex at", coords)
                         if not is_first_hexagon_clicked:
-                            generate_mines(row, col, coords)
-                        
-                        is_first_hexagon_clicked = True
+                            mines = generate_mines(row, col, coords)
+                            is_first_hexagon_clicked = True
+                        else:
+                            check_hex(coords[0], coords[1], mines, row, col, checked_hex)
                         break
