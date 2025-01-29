@@ -12,6 +12,7 @@ is_first_hexagon_clicked = False
 row = 5
 col = 6
 hexagons_grid = Hexagons(50, 'blue', False, (50, 50), row, col)
+difficulty = 0.2
 
 def draw_hexagon(Surface, hexagon, points):
     pygame.draw.polygon(
@@ -48,27 +49,31 @@ def point_in_hexagon(point, hexagon):
         p1x, p1y = p2x, p2y
     return inside
 
-
-def generate_mines(row, col, first_coord):
-    all_hexagons = row * col
-    all_hexagons_fraction = int(all_hexagons * 0.2)
+def generate_mines(first_coord, hexagons):
+    mines_remaining = int(row * col * difficulty)
     first_coord_row = first_coord[0]
     first_coord_col = first_coord[1]
-    matrix = [[0] * col for _ in range(row)]
-    mines_remaining = all_hexagons_fraction
 
     while True:
         x = random.randrange(0, row)
         y = random.randrange(0, col)
+        targeted_coords = (x, y)
+        targeted_hexagon = hexagons.get_hexagon_by_coords(targeted_coords)
+
         if x == first_coord_row and y == first_coord_col:
             continue
-        if matrix[x][y] != 1:
-            matrix[x][y] = 1
+
+        if targeted_hexagon.get_is_mined() == False:
+            targeted_hexagon.set_is_mined(True)
             mines_remaining -= 1
+            print(targeted_coords)
+
         if mines_remaining <= 0:
             break
-    
-    return matrix
+
+def check_if_hex_is_mined(hexagon):
+    if hexagon.get_is_mined():
+        end_game()
 
 # def check_hex(x, y, mines, row, col, checked_hex):
 #     if mines[x][y] == 1:
@@ -101,10 +106,6 @@ def generate_mines(row, col, first_coord):
 #     if mines[x][y]:
 #         print(1)
 
-def flood_fill(x, y, mines):
-    if x < 0 or x > row:
-        return
-
 def end_game():
     print("you lose! :(")
 
@@ -129,6 +130,12 @@ while running:
                         hexagon.set_color('green')
                         hexagon.set_value(1)
                         
+                        if not is_first_hexagon_clicked:
+                            is_first_hexagon_clicked = True
+                            coords = hexagon.get_coords()
+                            generate_mines(coords, hexagons_grid)
+                        else:
+                            check_if_hex_is_mined(hexagon)
                         # hexagon.color = 'green'
                 # for coords, hex_pos, hex_points in hexagons:
                 #     if point_in_hexagon(mouse_pos, hex_points):

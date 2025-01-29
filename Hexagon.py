@@ -1,14 +1,14 @@
 from math import sqrt, sin, cos
 
 class Hexagon:
-    def __init__(self, size, color, is_flat_top, position, is_mined, coords, value=''):
+    def __init__(self, size, color, is_flat_top, position, coords, value='', is_mined=False):
         self.size = size
         self.color = color
         self.is_flat_top = is_flat_top
         self.position = position
-        self.is_mined = is_mined
         self.coords = coords
         self.value = value
+        self.is_mined = is_mined
 
     def get_points(self):
         PI = 3.14
@@ -34,6 +34,15 @@ class Hexagon:
     def set_value(self, value=''):
         self.value = value
 
+    def set_is_mined(self, is_mined):
+        self.is_mined = is_mined
+
+    def get_is_mined(self):
+        return self.is_mined
+    
+    def get_coords(self):
+        return self.coords
+
 class Hexagons:
     def __init__(self, size, color, is_flat_top, start_pos, rows, columns):
         self.hexagons = []
@@ -51,7 +60,7 @@ class Hexagons:
 
         for row in range(rows):
             for col in range(columns):
-                hexagon = Hexagon(size, color, is_flat_top, (pos_x, pos_y), False, (row, col))
+                hexagon = Hexagon(size, color, is_flat_top, (pos_x, pos_y), (row, col))
                 points = hexagon.get_points()
                 self.hexagons.append((hexagon, points))
 
@@ -60,3 +69,9 @@ class Hexagons:
             pos_x = start_pos[0]
             if row % 2 == 0:
                 pos_x += horiz
+
+    def get_hexagon_by_coords(self, target_coords):
+        for hexagon, _ in self.hexagons:
+            if hexagon.get_coords() == target_coords:
+                return hexagon
+        return None
