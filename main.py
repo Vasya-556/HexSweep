@@ -1,20 +1,37 @@
 import pygame
 import random
 from Hexagon import Hexagon, Hexagons
+from Button import Button
 
 pygame.init()
-screen = pygame.display.set_mode((600, 400))
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 400
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("HexSweep.py")
 
 running = True
 is_first_hexagon_clicked = False
+game_paused = False
+
 row = 7
 col = 9
 difficulty = 0.2
 size = 35
 font_size = int(size * 0.9) 
+font = pygame.font.Font("Jersey15-Regular.ttf", font_size)
+
 start_point = (size, size)
 hexagons_grid = Hexagons(size, 'blue', False, start_point, row, col)
+
+button_color = "gray"
+button_text_color = "black"
+button_font_size = 40
+button_font = pygame.font.Font("Jersey15-Regular.ttf", button_font_size)
+
+start_button = Button(screen, 50, 50, 'Start', button_font, button_font_size, (100, 50), button_color, button_text_color)
+restart_button = Button(screen, 50, 50, 'Restart', button_font, button_font_size, (100, 100), button_color, button_text_color)
+settings_button = Button(screen, 50, 50, 'Settings', button_font, button_font_size, (100, 150), button_color, button_text_color)
+exit_button = Button(screen, 50, 50, 'Exit', button_font, button_font_size, (100, 200), button_color, button_text_color)
 
 def draw_hexagon(Surface, hexagon, points):
     pygame.draw.polygon(
@@ -28,7 +45,6 @@ def draw_hexagon(Surface, hexagon, points):
         points,
         width=3
     )
-    font = pygame.font.Font("Jersey15-Regular.ttf", font_size)
     text_surface = font.render(str(hexagon.value), True, "black")
     text_rect = text_surface.get_rect(center=hexagon.position)
     
@@ -165,16 +181,30 @@ def end_game():
 while running:
     screen.fill("white")
 
-    for hexagon, points in hexagons_grid.hexagons:
-        draw_hexagon(screen, hexagon, points)
+
+
+    if game_paused == True:
+        if start_button.draw():
+            pass
+        if restart_button.draw():
+            pass
+        if settings_button.draw():
+            pass
+        if exit_button.draw():
+            running = False
+    else:
+        for hexagon, points in hexagons_grid.hexagons:
+            draw_hexagon(screen, hexagon, points)
 
     pygame.display.update()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            pygame.quit()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                game_paused = not game_paused
+        if event.type == pygame.MOUSEBUTTONDOWN and not game_paused:
             if event.button == 1:  
                 mouse_pos = pygame.mouse.get_pos()
 
@@ -200,3 +230,6 @@ while running:
                             hexagon.set_color('orange')
                             hexagon.set_value('?')
                         hexagon.toggle_is_flagged()
+
+
+pygame.quit()
