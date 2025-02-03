@@ -1,7 +1,7 @@
 from math import sqrt, sin, cos
 
 class Hexagon:
-    def __init__(self, size, color, is_flat_top, position, coords, value='', is_mined=False):
+    def __init__(self, size, color, is_flat_top, position, coords, value='', is_mined=False, is_flagged=False, is_revealed=False):
         self.size = size
         self.color = color
         self.is_flat_top = is_flat_top
@@ -9,6 +9,8 @@ class Hexagon:
         self.coords = coords
         self.value = value
         self.is_mined = is_mined
+        self.is_flagged = is_flagged
+        self.is_revealed = is_revealed
 
     def get_points(self):
         PI = 3.14
@@ -28,6 +30,9 @@ class Hexagon:
         
         return points
 
+    def toggle_is_flagged(self):
+        self.is_flagged = not self.is_flagged
+
     def set_color(self, color='blue'):
         self.color = color
     
@@ -37,11 +42,26 @@ class Hexagon:
     def set_is_mined(self, is_mined):
         self.is_mined = is_mined
 
+    def set_is_flagged(self, is_flagged):
+        self.is_flagged = is_flagged
+
+    def set_is_revealed(self, is_revealed):
+        self.is_revealed = is_revealed
+
     def get_is_mined(self):
         return self.is_mined
     
     def get_coords(self):
         return self.coords
+    
+    def get_is_flagged(self):
+        return self.is_flagged
+    
+    def get_is_revealed(self):
+        return self.is_revealed
+    
+    def get_value(self):
+        return self.value
 
 class Hexagons:
     def __init__(self, size, color, is_flat_top, start_pos, rows, columns):

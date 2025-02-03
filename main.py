@@ -1,6 +1,5 @@
 import pygame
 import random
-from math import cos, sin, sqrt
 from Hexagon import Hexagon, Hexagons
 
 pygame.init()
@@ -9,10 +8,13 @@ pygame.display.set_caption("HexSweep.py")
 
 running = True
 is_first_hexagon_clicked = False
-row = 5
-col = 6
-hexagons_grid = Hexagons(50, 'blue', False, (50, 50), row, col)
+row = 7
+col = 9
 difficulty = 0.2
+size = 35
+font_size = int(size * 0.9) 
+start_point = (size, size)
+hexagons_grid = Hexagons(size, 'blue', False, start_point, row, col)
 
 def draw_hexagon(Surface, hexagon, points):
     pygame.draw.polygon(
@@ -24,9 +26,9 @@ def draw_hexagon(Surface, hexagon, points):
         Surface,
         'black',
         points,
-        width=4
+        width=3
     )
-    font = pygame.font.Font("Jersey15-Regular.ttf", 45)
+    font = pygame.font.Font("Jersey15-Regular.ttf", font_size)
     text_surface = font.render(str(hexagon.value), True, "black")
     text_rect = text_surface.get_rect(center=hexagon.position)
     
@@ -66,48 +68,99 @@ def generate_mines(first_coord, hexagons):
         if targeted_hexagon.get_is_mined() == False:
             targeted_hexagon.set_is_mined(True)
             mines_remaining -= 1
-            print(targeted_coords)
 
         if mines_remaining <= 0:
             break
 
 def check_if_hex_is_mined(hexagon):
     if hexagon.get_is_mined():
+        hexagon.set_color("red")
+        hexagon.set_is_revealed(True)
+        hexagon.set_value('X')
         end_game()
+        return
+    hexagon.set_color("gray")
+    hexagon.set_is_revealed(True)
+    hexagon.set_value('')
 
-# def check_hex(x, y, mines, row, col, checked_hex):
-#     if mines[x][y] == 1:
-#         end_game()
-#     else:
-#         total = 0
-#         output = check_neighbors(x, y, mines, row, col, checked_hex, total)
-#         print(output)
-#         return
+def flood_fill(coords, hexagons):
+    x, y = coords
+    targeted_hexagon = hexagons.get_hexagon_by_coords((x, y))
+    
+    if not targeted_hexagon or targeted_hexagon.get_is_revealed() or targeted_hexagon.get_is_flagged():
+        return
 
-# def check_neighbors(x, y, mines, row, col, checked_hex, total):
-#     if x >= row or y >= col or x < 0 or y < 0:
-#         return 0
-#     if checked_hex[x][y] == 1:
-#         return 0
-#     checked_hex[x][y] = 1
-#     total += check_neighbors(x, y-1, mines, row, col, checked_hex, total)
-#     total += check_neighbors(x+1, y-1, mines, row, col, checked_hex, total)
-#     total += check_neighbors(x-1, y, mines, row, col, checked_hex, total)
-#     total += check_neighbors(x+1, y, mines, row, col, checked_hex, total)
-#     total += check_neighbors(x-1, y+1, mines, row, col, checked_hex, total)
-#     total += check_neighbors(x, y+1, mines, row, col, checked_hex, total)
-#     if mines[x][y] == 1:
-#         return total + 1
-#     return total
+    if targeted_hexagon.get_value() != '':
+        return
 
-# def flood_fill(x, y, mines):
-#     if x < 0 and x > row and y < 0 and y > col:
-#         return
-#     if mines[x][y]:
-#         print(1)
+    if targeted_hexagon.get_is_mined():
+        end_game()
+        return
+
+    mine_count = count_adjacent_mines((x, y), hexagons)
+    targeted_hexagon.set_is_revealed(True)
+
+    if mine_count > 0:
+        targeted_hexagon.set_value(str(mine_count))
+        targeted_hexagon.set_color("green" if mine_count == 1 else "yellow" if mine_count == 2 else "purple")
+        return  
+
+    targeted_hexagon.set_value("")
+    targeted_hexagon.set_color("gray")
+
+    if x % 2 == 0:
+        neighbors = [
+            (x-1, y-1), (x-1, y),
+            (x, y-1), (x, y+1),
+            (x+1, y-1), (x+1, y),
+        ]
+    else:
+        neighbors = [
+            (x-1, y), (x-1, y+1),
+            (x, y-1), (x, y+1),
+            (x+1, y), (x+1, y+1),
+        ]
+
+    for nx, ny in neighbors:
+        if hexagons.get_hexagon_by_coords((nx, ny)):
+            flood_fill((nx, ny), hexagons)
+
+        if hexagons.get_hexagon_by_coords((nx, ny)):
+            flood_fill((nx, ny), hexagons)
+
+
+def count_adjacent_mines(coords, hexagons):
+    x, y = coords
+    
+    if x % 2 == 0:
+        neighbors = [
+            (x-1, y-1), (x-1, y),
+            (x, y-1), (x, y+1),
+            (x+1, y-1), (x+1, y),
+        ]
+    else:
+        neighbors = [
+            (x-1, y), (x-1, y+1),
+            (x, y-1), (x, y+1),
+            (x+1, y), (x+1, y+1),
+        ]
+
+    mine_count = 0
+    for nx, ny in neighbors:
+        hex_tile = hexagons.get_hexagon_by_coords((nx, ny))
+        if hex_tile and hex_tile.get_is_mined():
+            mine_count += 1
+
+    return mine_count
 
 def end_game():
     print("you lose! :(")
+    for hexagon, _ in hexagons_grid.hexagons:
+        if hexagon.get_is_mined():
+            hexagon.set_is_revealed(True)
+            hexagon.set_value("X")
+            hexagon.set_color("red")
+    pygame.display.update()
 
 while running:
     screen.fill("white")
@@ -127,27 +180,23 @@ while running:
 
                 for hexagon, points in hexagons_grid.hexagons:
                     if point_in_hexagon(mouse_pos, points):
-                        hexagon.set_color('green')
-                        hexagon.set_value(1)
                         
                         if not is_first_hexagon_clicked:
                             is_first_hexagon_clicked = True
                             coords = hexagon.get_coords()
                             generate_mines(coords, hexagons_grid)
+
+                        coords = hexagon.get_coords()
+                        flood_fill(coords, hexagons_grid)
+            elif event.button == 3:
+                mouse_pos = pygame.mouse.get_pos()
+
+                for hexagon, points in hexagons_grid.hexagons:
+                    if point_in_hexagon(mouse_pos, points):
+                        if hexagon.get_is_flagged():
+                            hexagon.set_color('blue')
+                            hexagon.set_value('')
                         else:
-                            check_if_hex_is_mined(hexagon)
-                        # hexagon.color = 'green'
-                # for coords, hex_pos, hex_points in hexagons:
-                #     if point_in_hexagon(mouse_pos, hex_points):
-                #         x, y = coords[0], coords[1]
-                #         colors[x][y] = 'green'
-                #         hex_values[x][y] = '1'
-                #         if not is_first_hexagon_clicked:
-                #             mines = generate_mines(row, col, coords)
-                #             is_first_hexagon_clicked = True
-                #         else:
-                #             pass
-                #             # flood_fill(coords[0], coords[1], mines)
-                #             # check_hex(coords[0], coords[1], mines, row, col, checked_hex)
-                #             # print(mines)
-                #         break
+                            hexagon.set_color('orange')
+                            hexagon.set_value('?')
+                        hexagon.toggle_is_flagged()
