@@ -11,6 +11,7 @@ class Hexagon:
         self.is_mined = is_mined
         self.is_flagged = is_flagged
         self.is_revealed = is_revealed
+        self.reserve = [color, value]
 
     def get_points(self):
         PI = 3.14
@@ -62,6 +63,12 @@ class Hexagon:
     
     def get_value(self):
         return self.value
+    
+    def set_reserve(self):
+        self.reserve = [self.color, self.value]
+
+    def get_reserve(self):
+        return self.reserve
 
 class Hexagons:
     def __init__(self, size, color, is_flat_top, start_pos, rows, columns):
