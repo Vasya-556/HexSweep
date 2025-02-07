@@ -49,3 +49,6 @@ class Button:
             self.clicked = False
 
         return action
+    
+    def set_text(self, text):
+        self.text = text

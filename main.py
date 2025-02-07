@@ -332,6 +332,14 @@ def change_settings():
     sound_percent_pos = (SCREEN_WIDTH - SCREEN_WIDTH * 0.29, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.8)
     sound_font = font
 
+    hexagon_top_text = font.render("Top:", True, "black")
+    hexagon_top_text_pos = (SCREEN_WIDTH - SCREEN_WIDTH * 0.4, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.6)
+    hexagons_top = Button(screen, button_width, button_height, 'Flat', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.4, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.5), button_color, button_text_color)
+    if is_hexagons_top_flat:
+        hexagons_top.set_text("Flat")
+    else:
+        hexagons_top.set_text("Pointy")
+
     while settings_running:
         screen.fill("white")
         
@@ -346,6 +354,7 @@ def change_settings():
         screen.blit(difficulty_text, difficulty_text_pos)
         screen.blit(sound_text, sound_text_pos)
         screen.blit(sound_percent, sound_percent_pos)
+        screen.blit(hexagon_top_text, hexagon_top_text_pos)
 
         if difficulty_beginner.draw():
             set_game_parameters(6, 6, 0.2, 450, 400)
@@ -358,6 +367,13 @@ def change_settings():
             sound = min(1, round(sound + 0.05, 2)) 
         if sound_minus.draw():
             sound = max(0, round(sound - 0.05, 2))   
+
+        if hexagons_top.draw():
+            is_hexagons_top_flat = not is_hexagons_top_flat
+            if is_hexagons_top_flat:
+                hexagons_top.set_text("Flat")
+            else:
+                hexagons_top.set_text("Pointy")
 
         pygame.display.update()
 

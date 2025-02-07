@@ -17,8 +17,7 @@ class Hexagon:
         PI = 3.14
         points = []
         
-        i = 0
-        for j in range(6):
+        for i in range(6):
             if self.is_flat_top:
                 angle_deg = 60 * i
             else:
@@ -27,7 +26,6 @@ class Hexagon:
             x = self.position[0] + self.size * cos(angle_rad)
             y = self.position[1] + self.size * sin(angle_rad)
             points.append((x,y))
-            i += 1
         
         return points
 
