@@ -1,3 +1,5 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import random
 import time
@@ -6,29 +8,33 @@ from Button import Button
 
 pygame.init()
 SCREEN_WIDTH = 450
-SCREEN_HEIGHT = 400
+SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("HexSweep")
+
+pygame_icon = pygame.image.load('assets/hexagon.png')
+pygame.display.set_icon(pygame_icon)
 
 running = True
 is_first_hexagon_clicked = False
 game_paused = True
 game_finished = False
+is_hexagons_top_flat = True
 
 row = 6
 col = 6
 difficulty = 0.2
 size = int(SCREEN_WIDTH / row / 2)
 font_size = int(size * 0.9) 
-font = pygame.font.Font("Jersey15-Regular.ttf", font_size)
+font = pygame.font.Font("assets/Jersey15-Regular.ttf", font_size)
 
 start_point = (size + size * 0.2, 2 * size + size * 0.2)
-hexagons_grid = Hexagons(size, 'blue', False, start_point, row, col)
+hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, col)
 
 button_color = "gray"
 button_text_color = "black"
 button_font_size = int(size + size * 0.1)
-button_font = pygame.font.Font("Jersey15-Regular.ttf", button_font_size)
+button_font = pygame.font.Font("assets/Jersey15-Regular.ttf", button_font_size)
 button_width = int(button_font_size * 3.5)
 button_height = button_font_size
 
@@ -44,29 +50,30 @@ stopwatch_running = False
 start_time = 0
 elapsed_time = 0
 
-def set_game_parameters(new_row, new_col, new_difficulty, height, width):
+def set_game_parameters(new_row, new_col, new_difficulty, height, width, new_top=False):
     global row, col, difficulty, size, font_size, font, start_point, hexagons_grid, button_color, button_text_color, button_font_size
     global button_font, button_width, button_height, SCREEN_WIDTH, SCREEN_HEIGHT, play_button, restart_button, settings_button, exit_button 
-    global total_mines, total_mines_label, stopwatch_running, start_time, elapsed_time
+    global total_mines, total_mines_label, stopwatch_running, start_time, elapsed_time, is_hexagons_top_flat
     
     row = new_row
     col = new_col
     difficulty = new_difficulty
     size = int(width / new_row / 2)
     font_size = int(size * 0.9) 
-    font = pygame.font.Font("Jersey15-Regular.ttf", font_size)
+    font = pygame.font.Font("assets/Jersey15-Regular.ttf", font_size)
     SCREEN_WIDTH = height
     SCREEN_HEIGHT = width
     total_mines = 0
     total_mines_label = int(row * col * difficulty)
 
     start_point = (size + size * 0.2, 2 * size + size * 0.2)
-    hexagons_grid = Hexagons(size, 'blue', False, start_point, row, col)
+    is_hexagons_top_flat = new_top
+    hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, col)
 
     button_color = "gray"
     button_text_color = "black"
     button_font_size = int(size + size * 0.1)
-    button_font = pygame.font.Font("Jersey15-Regular.ttf", button_font_size)
+    button_font = pygame.font.Font("assets/Jersey15-Regular.ttf", button_font_size)
     button_width = int(button_font_size * 3.5)
     button_height = button_font_size
 
@@ -137,6 +144,7 @@ def generate_mines(first_coord, hexagons):
             break
 
 def flood_fill(coords, hexagons):
+    global is_hexagons_top_flat
     x, y = coords
     targeted_hexagon = hexagons.get_hexagon_by_coords((x, y))
     
@@ -167,18 +175,45 @@ def flood_fill(coords, hexagons):
     targeted_hexagon.set_value("")
     targeted_hexagon.set_color("gray")
 
-    if x % 2 == 0:
-        neighbors = [
-            (x-1, y-1), (x-1, y),
-            (x, y-1), (x, y+1),
-            (x+1, y-1), (x+1, y),
-        ]
+    # if x % 2 == 0:
+    #     neighbors = [
+    #         (x-1, y-1), (x-1, y),
+    #         (x, y-1), (x, y+1),
+    #         (x+1, y-1), (x+1, y),
+    #     ]
+    # else:
+    #     neighbors = [
+    #         (x-1, y), (x-1, y+1),
+    #         (x, y-1), (x, y+1),
+    #         (x+1, y), (x+1, y+1),
+    #     ]
+    
+    if is_hexagons_top_flat:
+        if y % 2 == 0:
+            neighbors = [
+                (x-1, y-1), (x, y-1),
+                (x-1, y+1), (x, y+1),
+                (x-1, y), (x+1, y)
+            ]
+        else:
+            neighbors = [
+                (x, y-1), (x+1, y-1),
+                (x, y+1), (x+1, y+1),
+                (x-1, y), (x+1, y)
+            ]
     else:
-        neighbors = [
-            (x-1, y), (x-1, y+1),
-            (x, y-1), (x, y+1),
-            (x+1, y), (x+1, y+1),
-        ]
+        if x % 2 == 0:
+            neighbors = [
+                (x-1, y-1), (x-1, y),
+                (x, y-1), (x, y+1),
+                (x+1, y-1), (x+1, y),
+            ]
+        else:
+            neighbors = [
+                (x-1, y), (x-1, y+1),
+                (x, y-1), (x, y+1),
+                (x+1, y), (x+1, y+1),
+            ]
 
     for nx, ny in neighbors:
         if hexagons.get_hexagon_by_coords((nx, ny)):
@@ -189,20 +224,35 @@ def flood_fill(coords, hexagons):
 
 
 def count_adjacent_mines(coords, hexagons):
+    global is_hexagons_top_flat
     x, y = coords
     
-    if x % 2 == 0:
-        neighbors = [
-            (x-1, y-1), (x-1, y),
-            (x, y-1), (x, y+1),
-            (x+1, y-1), (x+1, y),
-        ]
+    if is_hexagons_top_flat:
+        if y % 2 == 0:
+            neighbors = [
+                (x-1, y-1), (x, y-1),
+                (x-1, y+1), (x, y+1),
+                (x-1, y), (x+1, y)
+            ]
+        else:
+            neighbors = [
+                (x, y-1), (x+1, y-1),
+                (x, y+1), (x+1, y+1),
+                (x-1, y), (x+1, y)
+            ]
     else:
-        neighbors = [
-            (x-1, y), (x-1, y+1),
-            (x, y-1), (x, y+1),
-            (x+1, y), (x+1, y+1),
-        ]
+        if x % 2 == 0:
+            neighbors = [
+                (x-1, y-1), (x-1, y),
+                (x, y-1), (x, y+1),
+                (x+1, y-1), (x+1, y),
+            ]
+        else:
+            neighbors = [
+                (x-1, y), (x-1, y+1),
+                (x, y-1), (x, y+1),
+                (x+1, y), (x+1, y+1),
+            ]
 
     mine_count = 0
     for nx, ny in neighbors:
@@ -211,6 +261,20 @@ def count_adjacent_mines(coords, hexagons):
             mine_count += 1
 
     return mine_count
+
+def check_remaining_hex(hexagons):
+    global row, col, total_mines, stopwatch_running, game_finished
+    revealed_hex = 0
+    total_hex = row * col
+    for i in range(row):
+        for j in range(col):
+            targeted_hexagon = hexagons.get_hexagon_by_coords((i, j))
+            if targeted_hexagon.get_is_revealed():
+                revealed_hex += 1
+    if revealed_hex + total_mines == total_hex:
+        print("You won!")
+        game_finished = True
+        stopwatch_running = False
 
 def end_game():
     global game_finished, stopwatch_running
@@ -234,12 +298,12 @@ def play_game():
         stopwatch_running = True
 
 def restart_game():
-    global game_paused, is_first_hexagon_clicked, hexagons_grid, game_finished, total_mines_label, stopwatch_running, start_time, elapsed_time
+    global game_paused, is_first_hexagon_clicked, hexagons_grid, game_finished, total_mines_label, stopwatch_running, start_time, elapsed_time, is_hexagons_top_flat
 
     is_first_hexagon_clicked = False
     game_paused = False
     game_finished = False
-    hexagons_grid = Hexagons(size, 'blue', False, start_point, row, col)
+    hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, col)
     total_mines_label = int(row * col * difficulty)
     
     stopwatch_running = True
@@ -248,7 +312,7 @@ def restart_game():
 
 def change_settings():
     global is_first_hexagon_clicked, hexagons_grid, SCREEN_WIDTH, SCREEN_HEIGHT, screen, font, button_width
-    global button_height, game_finished, button_font, button_font_size, button_text_color, button_color 
+    global button_height, game_finished, button_font, button_font_size, button_text_color, button_color, is_hexagons_top_flat
     settings_running = True
 
     back_button = Button(screen, button_width, button_height, 'Back', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.5 - 50, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.1-25), "red", button_text_color)
@@ -274,7 +338,7 @@ def change_settings():
         if back_button.draw():
             is_first_hexagon_clicked = False
             game_finished = False
-            hexagons_grid = Hexagons(size, 'blue', False, start_point, row, col)
+            hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, col)
             screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
             settings_running = False
         
@@ -314,20 +378,6 @@ def stop_stopwatch():
         elapsed_time = time.time() - start_time  
         stopwatch_running = False
 
-def check_remaining_hex(hexagons):
-    global row, col, total_mines, stopwatch_running, game_finished
-    revealed_hex = 0
-    total_hex = row * col
-    for i in range(row):
-        for j in range(col):
-            targeted_hexagon = hexagons.get_hexagon_by_coords((i, j))
-            if targeted_hexagon.get_is_revealed():
-                revealed_hex += 1
-    if revealed_hex + total_mines == total_hex:
-        print("You won!")
-        game_finished = True
-        stopwatch_running = False
-
 while running:
     screen.fill("white")
     if game_paused == True:
@@ -365,25 +415,20 @@ while running:
                     else:
                         start_time = time.time() - elapsed_time  
                         stopwatch_running = True
-            
         if event.type == pygame.MOUSEBUTTONDOWN and not game_paused:
             if event.button == 1 and game_finished == False:  
                 mouse_pos = pygame.mouse.get_pos()
-
                 for hexagon, points in hexagons_grid.hexagons:
                     if point_in_hexagon(mouse_pos, points):
-                        
                         if not is_first_hexagon_clicked:
                             is_first_hexagon_clicked = True
                             coords = hexagon.get_coords()
                             generate_mines(coords, hexagons_grid)
-
                         coords = hexagon.get_coords()
                         flood_fill(coords, hexagons_grid)
                 check_remaining_hex(hexagons_grid)
             elif event.button == 3 and game_finished == False:
                 mouse_pos = pygame.mouse.get_pos()
-
                 for hexagon, points in hexagons_grid.hexagons:
                     if point_in_hexagon(mouse_pos, points):
                         if hexagon.get_is_flagged():

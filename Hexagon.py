@@ -74,9 +74,12 @@ class Hexagons:
     def __init__(self, size, color, is_flat_top, start_pos, rows, columns):
         self.hexagons = []
         if is_flat_top:    
+            # horiz = 3/2 * size
+            # vert = sqrt(3) * size
+            # vert = vert/2
             horiz = 3/2 * size
+            horiz = horiz/2
             vert = sqrt(3) * size
-            vert = vert/2
         else:
             horiz = sqrt(3) * size
             horiz = horiz/2
@@ -85,17 +88,33 @@ class Hexagons:
         pos_x = start_pos[0]
         pos_y = start_pos[1]
 
-        for row in range(rows):
-            for col in range(columns):
-                hexagon = Hexagon(size, color, is_flat_top, (pos_x, pos_y), (row, col))
-                points = hexagon.get_points()
-                self.hexagons.append((hexagon, points))
+        if is_flat_top:
+            for row in range(rows):
+                for col in range(columns):
+                    hexagon = Hexagon(size, color, is_flat_top, (pos_x, pos_y), (row, col))
+                    points = hexagon.get_points()
+                    self.hexagons.append((hexagon, points))
 
-                pos_x += horiz * 2
-            pos_y += vert
-            pos_x = start_pos[0]
-            if row % 2 == 0:
-                pos_x += horiz
+                    pos_x += horiz * 2
+                    if col % 2 == 0:
+                        pos_y += vert /2
+                    else:
+                        pos_y -= vert /2
+                pos_y += vert
+                pos_x = start_pos[0]
+
+        else:
+            for row in range(rows):
+                for col in range(columns):
+                    hexagon = Hexagon(size, color, is_flat_top, (pos_x, pos_y), (row, col))
+                    points = hexagon.get_points()
+                    self.hexagons.append((hexagon, points))
+
+                    pos_x += horiz * 2
+                pos_y += vert
+                pos_x = start_pos[0]
+                if row % 2 == 0:
+                    pos_x += horiz
 
     def get_hexagon_by_coords(self, target_coords):
         for hexagon, _ in self.hexagons:
