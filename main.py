@@ -7,8 +7,10 @@ from Hexagon import Hexagon, Hexagons
 from Button import Button
 
 pygame.init()
-SCREEN_WIDTH = 450
-SCREEN_HEIGHT = 600
+pygame.mixer.init()
+
+SCREEN_WIDTH = 416
+SCREEN_HEIGHT = 392
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("HexSweep")
 
@@ -19,16 +21,16 @@ running = True
 is_first_hexagon_clicked = False
 game_paused = True
 game_finished = False
-is_hexagons_top_flat = True
+is_hexagons_top_flat = False
 
 row = 6
 col = 6
 difficulty = 0.2
-size = int(SCREEN_WIDTH / row / 2)
+size = 35
 font_size = int(size * 0.9) 
 font = pygame.font.Font("assets/Jersey15-Regular.ttf", font_size)
 
-start_point = (size + size * 0.2, 2 * size + size * 0.2)
+start_point = (size + size * 0.2, 2 * size + size * 0.5)
 hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, col)
 
 button_color = "gray"
@@ -50,24 +52,42 @@ stopwatch_running = False
 start_time = 0
 elapsed_time = 0
 
-def set_game_parameters(new_row, new_col, new_difficulty, height, width, new_top=False):
+restart_button_in_game = Button(screen, button_width, button_height, 'Restart', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.5 - button_width * 0.5, SCREEN_HEIGHT - SCREEN_HEIGHT), button_color, button_text_color)
+
+pygame.mixer.music.load("assets/Background_music.mp3")
+pygame.mixer.music.set_volume(1)
+pygame.mixer.music.play(-1)
+
+winning_sound = pygame.mixer.Sound("assets/Winning_sound.mp3")
+loosing_sound = pygame.mixer.Sound("assets/Loose_sound.mp3")
+
+def set_game_parameters(new_row, new_col, new_difficulty, width, height, new_top=None):
     global row, col, difficulty, size, font_size, font, start_point, hexagons_grid, button_color, button_text_color, button_font_size
     global button_font, button_width, button_height, SCREEN_WIDTH, SCREEN_HEIGHT, play_button, restart_button, settings_button, exit_button 
-    global total_mines, total_mines_label, stopwatch_running, start_time, elapsed_time, is_hexagons_top_flat
+    global total_mines, total_mines_label, stopwatch_running, start_time, elapsed_time, is_hexagons_top_flat, restart_button_in_game
     
     row = new_row
     col = new_col
+    # SCREEN_WIDTH = width
+    # SCREEN_HEIGHT = height
+    # size = int(SCREEN_WIDTH / row / 2)
+    size = 35
+    if is_hexagons_top_flat:
+        SCREEN_WIDTH = 3/2 * size * row + size
+        SCREEN_HEIGHT = 1.73205080757 * size * col + 2.9 * size
+    else:
+        SCREEN_WIDTH = 1.73205080757 * size * row + 1.5 * size
+        SCREEN_HEIGHT = 3/2 * size * col + 2.2 * size
     difficulty = new_difficulty
-    size = int(width / new_row / 2)
     font_size = int(size * 0.9) 
     font = pygame.font.Font("assets/Jersey15-Regular.ttf", font_size)
-    SCREEN_WIDTH = height
-    SCREEN_HEIGHT = width
     total_mines = 0
     total_mines_label = int(row * col * difficulty)
 
-    start_point = (size + size * 0.2, 2 * size + size * 0.2)
-    is_hexagons_top_flat = new_top
+    if new_top != None:
+        is_hexagons_top_flat = new_top
+        
+    start_point = start_point = (size + size * 0.2, 2 * size + size * 0.5)
     hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, col)
 
     button_color = "gray"
@@ -85,6 +105,8 @@ def set_game_parameters(new_row, new_col, new_difficulty, height, width, new_top
     stopwatch_running = False
     start_time = 0
     elapsed_time = 0
+
+    restart_button_in_game = Button(screen, button_width, button_height, 'Restart', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.5 - button_width * 0.5, SCREEN_HEIGHT - SCREEN_HEIGHT), button_color, button_text_color)
 
 def draw_hexagon(Surface, hexagon, points):
     pygame.draw.polygon(
@@ -174,19 +196,6 @@ def flood_fill(coords, hexagons):
 
     targeted_hexagon.set_value("")
     targeted_hexagon.set_color("gray")
-
-    # if x % 2 == 0:
-    #     neighbors = [
-    #         (x-1, y-1), (x-1, y),
-    #         (x, y-1), (x, y+1),
-    #         (x+1, y-1), (x+1, y),
-    #     ]
-    # else:
-    #     neighbors = [
-    #         (x-1, y), (x-1, y+1),
-    #         (x, y-1), (x, y+1),
-    #         (x+1, y), (x+1, y+1),
-    #     ]
     
     if is_hexagons_top_flat:
         if y % 2 == 0:
@@ -263,7 +272,7 @@ def count_adjacent_mines(coords, hexagons):
     return mine_count
 
 def check_remaining_hex(hexagons):
-    global row, col, total_mines, stopwatch_running, game_finished
+    global row, col, total_mines, stopwatch_running, game_finished, restart_button_in_game
     revealed_hex = 0
     total_hex = row * col
     for i in range(row):
@@ -272,15 +281,19 @@ def check_remaining_hex(hexagons):
             if targeted_hexagon.get_is_revealed():
                 revealed_hex += 1
     if revealed_hex + total_mines == total_hex:
-        print("You won!")
+        # print("You won!")
+        winning_sound.play()
+        restart_button_in_game.set_text("You won!")
         game_finished = True
         stopwatch_running = False
 
 def end_game():
-    global game_finished, stopwatch_running
+    global game_finished, stopwatch_running, restart_button_in_game
     game_finished = True
     stopwatch_running = False
-    print("you lose! :(")
+    # print("you lose! :(")
+    loosing_sound.play()
+    restart_button_in_game.set_text("You lose!")
     for hexagon, _ in hexagons_grid.hexagons:
         if hexagon.get_is_mined():
             hexagon.set_is_revealed(True)
@@ -322,14 +335,14 @@ def change_settings():
     difficulty_normal = Button(screen, button_width, button_height, 'normal', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.9, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.6), button_color, button_text_color)
     difficulty_expert = Button(screen, button_width, button_height, 'expert', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.9, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.4), button_color, button_text_color)
 
-    sound = 1
+    sound = pygame.mixer.music.get_volume()
     sound_text = font.render("Sound:", True, "black")
-    sound_plus = Button(screen, button_width/3, button_height, '+', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.15, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.8), button_color, button_text_color)
-    sound_minus = Button(screen, button_width/3, button_height, '-', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.4, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.8), button_color, button_text_color)
+    sound_plus = Button(screen, button_width/3, button_height, '+', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.25, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.75), button_color, button_text_color)
+    sound_minus = Button(screen, button_width/3, button_height, '-', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.4, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.75), button_color, button_text_color)
     
     difficulty_text_pos = (SCREEN_WIDTH - SCREEN_WIDTH * 0.9, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.9)
     sound_text_pos = (SCREEN_WIDTH - SCREEN_WIDTH * 0.4, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.9)
-    sound_percent_pos = (SCREEN_WIDTH - SCREEN_WIDTH * 0.29, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.8)
+    sound_percent_pos = (SCREEN_WIDTH - SCREEN_WIDTH * 0.4, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.83)
     sound_font = font
 
     hexagon_top_text = font.render("Top:", True, "black")
@@ -357,7 +370,7 @@ def change_settings():
         screen.blit(hexagon_top_text, hexagon_top_text_pos)
 
         if difficulty_beginner.draw():
-            set_game_parameters(6, 6, 0.2, 450, 400)
+            set_game_parameters(6, 6, 0.2, 450, 500)
         if difficulty_normal.draw():
             set_game_parameters(8, 8, 0.3, 750, 700)
         if difficulty_expert.draw():
@@ -365,8 +378,10 @@ def change_settings():
 
         if sound_plus.draw():
             sound = min(1, round(sound + 0.05, 2)) 
+            pygame.mixer.music.set_volume(sound)
         if sound_minus.draw():
-            sound = max(0, round(sound - 0.05, 2))   
+            sound = max(0, round(sound - 0.05, 2))
+            pygame.mixer.music.set_volume(sound)
 
         if hexagons_top.draw():
             is_hexagons_top_flat = not is_hexagons_top_flat
@@ -374,6 +389,7 @@ def change_settings():
                 hexagons_top.set_text("Flat")
             else:
                 hexagons_top.set_text("Pointy")
+            set_game_parameters(row, col, difficulty, SCREEN_WIDTH, SCREEN_HEIGHT, is_hexagons_top_flat)
 
         pygame.display.update()
 
@@ -415,6 +431,9 @@ while running:
             elapsed_time = time.time() - start_time
         time_display = font.render(f"{elapsed_time:.1f}", True, "black")
         screen.blit(time_display, (SCREEN_WIDTH - SCREEN_WIDTH * 0.2, size * 0.1))    
+        if restart_button_in_game.draw():
+            restart_game()
+            restart_button_in_game.set_text('Restart')
 
     pygame.display.update()
 
