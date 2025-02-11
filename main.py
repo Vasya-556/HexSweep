@@ -3,6 +3,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import random
 import time
+import sys
 from math import ceil
 from Hexagon import Hexagon, Hexagons
 from Button import Button
@@ -15,7 +16,14 @@ SCREEN_HEIGHT = 392
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("HexSweep")
 
-pygame_icon = pygame.image.load('assets/hexagon.png')
+if hasattr(sys, '_MEIPASS'):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(os.path.abspath(__file__))
+
+pygame_icon_path = os.path.join(base_path, 'assets', 'hexagon.png')
+
+pygame_icon = pygame.image.load(pygame_icon_path)
 pygame.display.set_icon(pygame_icon)
 
 running = True
@@ -29,7 +37,8 @@ col = 6
 difficulty = 0.2
 size = 35
 font_size = int(size * 0.9) 
-font = pygame.font.Font("assets/Jersey15-Regular.ttf", font_size)
+font_path = os.path.join(base_path, 'assets', 'Jersey15-Regular.ttf')
+font = pygame.font.Font(font_path, font_size)
 
 start_point = (size + size * 0.2, 2 * size + size * 0.5)
 hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, col)
@@ -37,7 +46,7 @@ hexagons_grid = Hexagons(size, 'blue', is_hexagons_top_flat, start_point, row, c
 button_color = "gray"
 button_text_color = "black"
 button_font_size = int(size + size * 0.1)
-button_font = pygame.font.Font("assets/Jersey15-Regular.ttf", button_font_size)
+button_font = pygame.font.Font(font_path, button_font_size)
 button_width = int(button_font_size * 3.5)
 button_height = button_font_size
 
@@ -55,17 +64,20 @@ elapsed_time = 0
 
 restart_button_in_game = Button(screen, button_width, button_height, 'Restart', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.5 - button_width * 0.5, SCREEN_HEIGHT - SCREEN_HEIGHT), button_color, button_text_color)
 
-pygame.mixer.music.load("assets/Background_music.mp3")
+bg_music_path = os.path.join(base_path, 'assets', 'Background_music.mp3')
+pygame.mixer.music.load(bg_music_path)
 pygame.mixer.music.set_volume(1)
 pygame.mixer.music.play(-1)
 
-winning_sound = pygame.mixer.Sound("assets/Winning_sound.mp3")
-loosing_sound = pygame.mixer.Sound("assets/Loose_sound.mp3")
+winning_sound_path = os.path.join(base_path, 'assets', 'Winning_sound.mp3')
+loosing_sound_path = os.path.join(base_path, 'assets', 'Loose_sound.mp3')
+winning_sound = pygame.mixer.Sound(winning_sound_path)
+loosing_sound = pygame.mixer.Sound(loosing_sound_path)
 
 def set_game_parameters(new_row, new_col, new_difficulty, new_top=None):
     global row, col, difficulty, size, font_size, font, start_point, hexagons_grid, button_color, button_text_color, button_font_size
     global button_font, button_width, button_height, SCREEN_WIDTH, SCREEN_HEIGHT, play_button, restart_button, settings_button, exit_button 
-    global total_mines, total_mines_label, stopwatch_running, start_time, elapsed_time, is_hexagons_top_flat, restart_button_in_game
+    global total_mines, total_mines_label, stopwatch_running, start_time, elapsed_time, is_hexagons_top_flat, restart_button_in_game, font_path
     
     row = new_row
     col = new_col
@@ -78,7 +90,7 @@ def set_game_parameters(new_row, new_col, new_difficulty, new_top=None):
         SCREEN_HEIGHT = 3/2 * size * col + 2.2 * size
     difficulty = new_difficulty
     font_size = int(size * 0.9) 
-    font = pygame.font.Font("assets/Jersey15-Regular.ttf", font_size)
+    font = pygame.font.Font(font_path, font_size)
     total_mines = 0
     total_mines_label = int(row * col * difficulty)
 
@@ -91,7 +103,7 @@ def set_game_parameters(new_row, new_col, new_difficulty, new_top=None):
     button_color = "gray"
     button_text_color = "black"
     button_font_size = int(size + size * 0.1)
-    button_font = pygame.font.Font("assets/Jersey15-Regular.ttf", button_font_size)
+    button_font = pygame.font.Font(font_path, font_size)
     button_width = int(button_font_size * 3.5)
     button_height = button_font_size
 
