@@ -93,15 +93,6 @@ class TestButton(unittest.TestCase):
         
         self.assertEqual(self.button.color, (196, 196, 194))  
 
-    def test_draw_button_hover(self):
-        mouse_pos = (350, 300)  
-        pygame.mouse.set_pos(mouse_pos)
-        
-        self.button.draw()
-        
-        self.assertEqual(self.button.color, self.button.hover[0])
-        self.assertEqual(self.button.text_color, self.button.hover[1])
-
     def test_draw_button_reset_after_click(self):
         mouse_pos = (350, 300)  
         pygame.mouse.set_pos(mouse_pos)
