@@ -3,6 +3,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import random
 import time
+from math import ceil
 from Hexagon import Hexagon, Hexagons
 from Button import Button
 
@@ -61,16 +62,13 @@ pygame.mixer.music.play(-1)
 winning_sound = pygame.mixer.Sound("assets/Winning_sound.mp3")
 loosing_sound = pygame.mixer.Sound("assets/Loose_sound.mp3")
 
-def set_game_parameters(new_row, new_col, new_difficulty, width, height, new_top=None):
+def set_game_parameters(new_row, new_col, new_difficulty, new_top=None):
     global row, col, difficulty, size, font_size, font, start_point, hexagons_grid, button_color, button_text_color, button_font_size
     global button_font, button_width, button_height, SCREEN_WIDTH, SCREEN_HEIGHT, play_button, restart_button, settings_button, exit_button 
     global total_mines, total_mines_label, stopwatch_running, start_time, elapsed_time, is_hexagons_top_flat, restart_button_in_game
     
     row = new_row
     col = new_col
-    # SCREEN_WIDTH = width
-    # SCREEN_HEIGHT = height
-    # size = int(SCREEN_WIDTH / row / 2)
     size = 35
     if is_hexagons_top_flat:
         SCREEN_WIDTH = 3/2 * size * row + size
@@ -144,26 +142,16 @@ def point_in_hexagon(point, hexagon):
 
 def generate_mines(first_coord, hexagons):
     global total_mines
-    mines_remaining = int(row * col * difficulty)
-    total_mines = mines_remaining
-    first_coord_row = first_coord[0]
-    first_coord_col = first_coord[1]
+    total_mines = int(row * col * difficulty)
 
-    while True:
-        x = random.randrange(0, row)
-        y = random.randrange(0, col)
-        targeted_coords = (x, y)
-        targeted_hexagon = hexagons.get_hexagon_by_coords(targeted_coords)
+    first_coord_row, first_coord_col = first_coord
 
-        if x == first_coord_row and y == first_coord_col:
-            continue
+    all_coords = [(x, y) for x in range(row) for y in range(col) if (x, y) != (first_coord_row, first_coord_col)]
 
-        if targeted_hexagon.get_is_mined() == False:
-            targeted_hexagon.set_is_mined(True)
-            mines_remaining -= 1
+    mine_coords = set(random.sample(all_coords, total_mines))
 
-        if mines_remaining <= 0:
-            break
+    for x, y in mine_coords:
+        hexagons.get_hexagon_by_coords((x, y)).set_is_mined(True)
 
 def flood_fill(coords, hexagons):
     global is_hexagons_top_flat
@@ -281,7 +269,6 @@ def check_remaining_hex(hexagons):
             if targeted_hexagon.get_is_revealed():
                 revealed_hex += 1
     if revealed_hex + total_mines == total_hex:
-        # print("You won!")
         winning_sound.play()
         restart_button_in_game.set_text("You won!")
         game_finished = True
@@ -291,7 +278,6 @@ def end_game():
     global game_finished, stopwatch_running, restart_button_in_game
     game_finished = True
     stopwatch_running = False
-    # print("you lose! :(")
     loosing_sound.play()
     restart_button_in_game.set_text("You lose!")
     for hexagon, _ in hexagons_grid.hexagons:
@@ -336,6 +322,7 @@ def change_settings():
     difficulty_expert = Button(screen, button_width, button_height, 'expert', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.9, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.4), button_color, button_text_color)
 
     sound = pygame.mixer.music.get_volume()
+    sound = ceil(sound * 100) / 100 
     sound_text = font.render("Sound:", True, "black")
     sound_plus = Button(screen, button_width/3, button_height, '+', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.25, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.75), button_color, button_text_color)
     sound_minus = Button(screen, button_width/3, button_height, '-', button_font, button_font_size, (SCREEN_WIDTH - SCREEN_WIDTH * 0.4, SCREEN_HEIGHT - SCREEN_HEIGHT * 0.75), button_color, button_text_color)
@@ -370,11 +357,11 @@ def change_settings():
         screen.blit(hexagon_top_text, hexagon_top_text_pos)
 
         if difficulty_beginner.draw():
-            set_game_parameters(6, 6, 0.2, 450, 500)
+            set_game_parameters(6, 6, 0.2)
         if difficulty_normal.draw():
-            set_game_parameters(8, 8, 0.3, 750, 700)
+            set_game_parameters(8, 8, 0.3)
         if difficulty_expert.draw():
-            set_game_parameters(10, 10, 0.4, 750, 800)
+            set_game_parameters(10, 10, 0.4)
 
         if sound_plus.draw():
             sound = min(1, round(sound + 0.05, 2)) 
@@ -389,7 +376,7 @@ def change_settings():
                 hexagons_top.set_text("Flat")
             else:
                 hexagons_top.set_text("Pointy")
-            set_game_parameters(row, col, difficulty, SCREEN_WIDTH, SCREEN_HEIGHT, is_hexagons_top_flat)
+            set_game_parameters(row, col, difficulty, is_hexagons_top_flat)
 
         pygame.display.update()
 
@@ -410,74 +397,80 @@ def stop_stopwatch():
         elapsed_time = time.time() - start_time  
         stopwatch_running = False
 
-while running:
-    screen.fill("white")
-    if game_paused == True:
-        if play_button.draw():
-            play_game()
-        if restart_button.draw():
-            restart_game()
-        if settings_button.draw():
-            change_settings()
-        if exit_button.draw():
-            running = False
-    else:
-        for hexagon, points in hexagons_grid.hexagons:
-            draw_hexagon(screen, hexagon, points)
-        total_mines_font = font.render(f"{total_mines_label}", True, "black")
-        screen.blit(total_mines_font, (SCREEN_WIDTH - SCREEN_WIDTH * 0.9, size * 0.1))
+def main():
+    global running, game_paused, total_mines_label, stopwatch_running, start_time, is_first_hexagon_clicked
+    while running:
+        screen.fill("white")
+        if game_paused == True:
+            if play_button.draw():
+                play_game()
+            if restart_button.draw():
+                restart_game()
+            if settings_button.draw():
+                change_settings()
+            if exit_button.draw():
+                running = False
+        else:
+            for hexagon, points in hexagons_grid.hexagons:
+                draw_hexagon(screen, hexagon, points)
+            total_mines_font = font.render(f"{total_mines_label}", True, "black")
+            screen.blit(total_mines_font, (SCREEN_WIDTH - SCREEN_WIDTH * 0.9, size * 0.1))
 
-        if stopwatch_running:
-            elapsed_time = time.time() - start_time
-        time_display = font.render(f"{elapsed_time:.1f}", True, "black")
-        screen.blit(time_display, (SCREEN_WIDTH - SCREEN_WIDTH * 0.2, size * 0.1))    
-        if restart_button_in_game.draw():
-            restart_game()
-            restart_button_in_game.set_text('Restart')
+            if stopwatch_running:
+                elapsed_time = time.time() - start_time
+            time_display = font.render(f"{elapsed_time:.1f}", True, "black")
+            screen.blit(time_display, (SCREEN_WIDTH - SCREEN_WIDTH * 0.2, size * 0.1))    
+            if restart_button_in_game.draw():
+                restart_game()
+                restart_button_in_game.set_text('Restart')
 
-    pygame.display.update()
+        pygame.display.update()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                game_paused = not game_paused
-                if not game_finished:
-                    if stopwatch_running:
-                        elapsed_time = time.time() - start_time  
-                        stopwatch_running = False
-                    else:
-                        start_time = time.time() - elapsed_time  
-                        stopwatch_running = True
-        if event.type == pygame.MOUSEBUTTONDOWN and not game_paused:
-            if event.button == 1 and game_finished == False:  
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    game_paused = not game_paused
+                    if not game_finished:
+                        if stopwatch_running:
+                            elapsed_time = time.time() - start_time  
+                            stopwatch_running = False
+                        else:
+                            start_time = time.time() - elapsed_time  
+                            stopwatch_running = True
+            
+            elif event.type == pygame.MOUSEBUTTONDOWN and not (game_paused or game_finished):
                 mouse_pos = pygame.mouse.get_pos()
-                for hexagon, points in hexagons_grid.hexagons:
-                    if point_in_hexagon(mouse_pos, points):
+
+                clicked_hex = next(
+                    (hexagon for hexagon, points in hexagons_grid.hexagons if point_in_hexagon(mouse_pos, points)),
+                    None
+                )
+
+                if clicked_hex:  
+                    if event.button == 1:  
                         if not is_first_hexagon_clicked:
                             is_first_hexagon_clicked = True
-                            coords = hexagon.get_coords()
-                            generate_mines(coords, hexagons_grid)
-                        coords = hexagon.get_coords()
-                        flood_fill(coords, hexagons_grid)
-                check_remaining_hex(hexagons_grid)
-            elif event.button == 3 and game_finished == False:
-                mouse_pos = pygame.mouse.get_pos()
-                for hexagon, points in hexagons_grid.hexagons:
-                    if point_in_hexagon(mouse_pos, points):
-                        if hexagon.get_is_flagged():
-                            reserv = hexagon.get_reserve()
-                            hexagon.set_color(reserv[0])
-                            hexagon.set_value(reserv[1])
+                            generate_mines(clicked_hex.get_coords(), hexagons_grid)
+                        flood_fill(clicked_hex.get_coords(), hexagons_grid)
+
+                    elif event.button == 3:  
+                        if clicked_hex.get_is_flagged():
+                            reserv = clicked_hex.get_reserve()
+                            clicked_hex.set_color(reserv[0])
+                            clicked_hex.set_value(reserv[1])
                             total_mines_label += 1
                         else:
-                            hexagon.set_reserve()
-                            hexagon.set_color('orange')
-                            hexagon.set_value('?')
+                            clicked_hex.set_reserve()
+                            clicked_hex.set_color('orange')
+                            clicked_hex.set_value('?')
                             total_mines_label -= 1
-                        hexagon.toggle_is_flagged()
-                check_remaining_hex(hexagons_grid)
+                        clicked_hex.toggle_is_flagged()
 
+                    check_remaining_hex(hexagons_grid)
 
+if __name__ == "__main__":
+    main()
 pygame.quit()
