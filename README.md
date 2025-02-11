@@ -1,6 +1,6 @@
 # HexSweep
 
-![](image.png)
+![](image.png)<br>
 HexSweep is a minesweeper game with hexagonal tiles, built using Pygame
 
 # Table of Contents
@@ -45,3 +45,6 @@ Pull requests are welcome.
 [MIT](LICENSE)
 
 ## Release Notes
+
+- **v0.1.0** (11.02.2025)
+  - Initial release.
