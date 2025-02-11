@@ -8,8 +8,6 @@ HexSweep is a minesweeper game with hexagonal tiles, built using Pygame
 - [HexSweep](#hexsweep)
 - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
-    - [Windows](#windows)
-    - [Linux](#linux)
   - [Usage](#usage)
   - [Contributing](#contributing)
   - [License](#license)
@@ -17,8 +15,10 @@ HexSweep is a minesweeper game with hexagonal tiles, built using Pygame
 
 ## Installation
 
-### Windows
-### Linux
+1. Download the latest TextEditor.exe executable file directly from the [Releases](https://github.com/Vasya-556/HexSweep/releases/tag/v0.1.0) page.
+2. Run the executable
+* If you see a SmartScreen warning saying "Windows protected your PC" and "Microsoft Defender SmartScreen prevented an unrecognized app from starting."
+* Click on More info, then click Run anyway to proceed with running the game.
 
 ## Usage
 
