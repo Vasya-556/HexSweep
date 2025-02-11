@@ -72,9 +72,6 @@ class Hexagons:
     def __init__(self, size, color, is_flat_top, start_pos, rows, columns):
         self.hexagons = []
         if is_flat_top:    
-            # horiz = 3/2 * size
-            # vert = sqrt(3) * size
-            # vert = vert/2
             horiz = 3/2 * size
             horiz = horiz/2
             vert = sqrt(3) * size
